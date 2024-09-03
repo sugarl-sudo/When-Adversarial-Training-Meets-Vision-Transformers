@@ -5,6 +5,7 @@ import logging
 import os
 from collections import OrderedDict
 from torch.utils.data.sampler import SubsetRandomSampler
+# from torch.utils.
 
 
 def clamp(X, lower_limit, upper_limit):
@@ -49,10 +50,17 @@ def get_loaders(args):
     ])
     num_workers = 16
     if args.dataset=="cifar":
+        # dataset = datasets.ImageFolder(args.data_dir+"cifar-10-images/",train_transform)
+        # train_size = int(0.8 * len(dataset))
+        # test_size = len(dataset) - train_size
+        # train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+        # train_dataset = datasets.ImageFolder(args.data_dir+"train/", train_transform)
+        # test_dataset = datasets.ImageFolder(args.data_dir+"val/", test_transform)
+        # もともとはダウンロードする形
         train_dataset = datasets.CIFAR10(
-        args.data_dir, train=True, transform=train_transform, download=True)
+        args.data_dir, train=True, transform=train_transform, download=False)
         test_dataset = datasets.CIFAR10(
-        args.data_dir, train=False, transform=test_transform, download=True)
+        args.data_dir, train=False, transform=test_transform, download=False)
     if args.dataset=="imagenette":
         train_dataset = datasets.ImageFolder(args.data_dir+"train/",train_transform)
         test_dataset = datasets.ImageFolder(args.data_dir+"val/",test_transform)
