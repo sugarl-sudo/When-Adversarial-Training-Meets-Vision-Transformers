@@ -1,0 +1,18 @@
+name: myenv
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8  # 必要に応じてPythonのバージョンを変更
+  - timm=0.5.4
+  - numpy>=1.18.5
+  - pytorch=1.9.0
+  - torchvision=0.10.0
+  - appdirs
+  - pip
+  - pip:
+      - git+https://github.com/fra31/auto-attack
+
+variables:
+  HTTP_PROXY: "http://proxy-u.ecl.ntt.co.jp:8080"
+  HTTPS_PROXY: "https://proxy-u.ecl.ntt.co.jp:8080"
