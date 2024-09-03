@@ -164,3 +164,6 @@ cython_debug/
 # dataset
 cifar-10-batches-py
 data
+
+# results 
+results
