@@ -1,4 +1,5 @@
-from notebook.models.wideresnet import WideResNetProp
+# from notebook.models.wideresnet import WideResNetProp
+from model_for_cifar.deit import deit_small_patch16_224
 import torch
 import torch.nn as nn
 import torchvision
@@ -8,10 +9,11 @@ from PIL import Image
 import random
 from tqdm import tqdm
 from torch.autograd import Variable
+from parser_cifar import get_args
 
 
 data_dir = 'data/'
-out_dir = 'data/cifar10/robust_features'
+out_dir = 'data/cifar10/robust_features-vit'
 cifar10_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
@@ -69,8 +71,12 @@ def save_adv_examples(x_adv, y, out_dir, batch_num):
 
 def main():
     # Load Robust model
-    model = WideResNetProp(depth=34)
-    model.load_state_dict(torch.load('../model-wideres-epoch99.pt'))
+    # model = WideResNetProp(depth=34)
+    # model.load_state_dict(torch.load('../model-wideres-epoch99.pt'))
+    args = get_args()
+    model = deit_small_patch16_224(pretrained=True, num_classes=10, img_size=args.crop, patch_size=args.patch, args=args)
+    model = nn.DataParallel(model)
+    model.load_state_dict(torch.load('./results/trades_cifar_deit_small_p16_224/checkpoint_40')['state_dict'])
     model = model.cuda()
     trans = transforms.Compose([
         # transforms.RandomCrop(32, padding=4),
@@ -79,7 +85,7 @@ def main():
     ])
     # Load CIFAR10 dataset
     train_dataset = torchvision.datasets.CIFAR10(root=data_dir, train=True, download=False, transform=trans)
-    data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=True, num_workers=4)
+    data_loader = torch.utils.data.DataLoader(train_dataset, batch_size=512, shuffle=False, num_workers=4)
     for batch_num, (x_natural, y) in enumerate(tqdm(data_loader, desc='Processing Batches')):
         x_natural = x_natural.cuda()
         x_random = get_random_batch(train_dataset, len(x_natural))

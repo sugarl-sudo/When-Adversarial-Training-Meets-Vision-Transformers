@@ -18,7 +18,7 @@ parser.add_argument('--test-batch-size', type=int, default=200, metavar='N',
                     help='input batch size for testing (default: 200)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disables CUDA training')
-parser.add_argument('--epsilon', default=0.031,
+parser.add_argument('--epsilon', default=0.25,
                     help='perturbation')
 parser.add_argument('--num-steps', default=20,
                     help='perturb number of steps')
@@ -28,13 +28,13 @@ parser.add_argument('--random',
                     default=True,
                     help='random initialization for PGD')
 parser.add_argument('--model-path',
-                    default='../wideres34-10.pt',
+                    default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
                     help='model for white-box attack evaluation')
 parser.add_argument('--source-model-path',
-                    default='../wideres34-10.pt',
+                    default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
                     help='source model for black-box attack evaluation')
 parser.add_argument('--target-model-path',
-                    default='../wideres34-10.pt',
+                    default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
                     help='target model for black-box attack evaluation')
 parser.add_argument('--white-box-attack', default=True,
                     help='whether perform white-box attack')
@@ -48,7 +48,7 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
 # set up data loader
 transform_test = transforms.Compose([transforms.ToTensor(),])
-testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform_test)
+testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
 test_loader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, **kwargs)
 
 
