@@ -80,7 +80,7 @@ def main():
     # model = WideResNetProp(depth=34)
     model = ResNet50().cuda()
     # model.load_state_dict(torch.load('../model-wideres-epoch99.pt'))
-    model.load_state_dict(torch.load('./results/model-cifar-ResNet50/model-res-epoch10.pt'))
+    model.load_state_dict(torch.load('./results/model-cifar-ResNet50/model-res-epoch100.pt'))
     model = model.cuda()
     trans = transforms.Compose([
         transforms.ToTensor(),
@@ -93,7 +93,7 @@ def main():
         x_random = get_random_batch(train_dataset, len(x_natural))
         x_random = x_random.cuda()
         y = y.cuda()
-        x_adv, _ = l2_pgd(x_natural, x_random, y, model, epsilon=0.5, perturb_steps=100, step_size=0.1)
+        x_adv, _ = l2_pgd(x_natural, x_random, y, model, epsilon=1.0, perturb_steps=100, step_size=0.1)
         
         save_adv_examples(x_adv, y, out_dir, batch_num)
 
