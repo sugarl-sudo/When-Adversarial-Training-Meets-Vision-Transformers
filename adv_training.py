@@ -6,9 +6,9 @@ import torch.optim as optim
 import numpy as np
 device = torch.device("cuda")
 from utils import * #EWC
-from non_local_embedded_gaussian import NONLocalBlock2D
+# from non_local_embedded_gaussian import NONLocalBlock2D
 
-import ot
+# import ot
 import random
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 

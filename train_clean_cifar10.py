@@ -11,13 +11,14 @@ from torchvision import datasets, transforms
 from models.wideresnet import *
 from models.resnet import *
 from adv_training import clean_loss
+from torchvision.datasets import ImageFolder
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR TRADES Adversarial Training')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
                     help='input batch size for testing (default: 128)')
-parser.add_argument('--epochs', type=int, default=100, metavar='N',
+parser.add_argument('--epochs', type=int, default=40, metavar='N',
                     help='number of epochs to train')
 parser.add_argument('--weight-decay', '--wd', default=5e-4,
                     type=float, metavar='W')
@@ -41,7 +42,7 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='how many batches to wait before logging training status')
 #parser.add_argument('--model-dir', default='./model-cifar-ResNet18-clean',
-parser.add_argument('--model-dir', default='./model-cifar-wideResNet70-16-clean',
+parser.add_argument('--model-dir', default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset',
                     help='directory of model for saving checkpoint')
 parser.add_argument('--save-freq', '-s', default=10, type=int, metavar='N',
                     help='save frequency')
@@ -68,9 +69,10 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
     #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # [-1 1]
 ])
-trainset = torchvision.datasets.CIFAR10(root='../data', train=True, download=False, transform=transform_train)
+# trainset = torchvision.datasets.CIFAR10(root='../data', train=True, download=False, transform=transform_train)
+trainset = ImageFolder(root='./data/cifar10/robust_features', transform=transform_train)
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, **kwargs)
-testset = torchvision.datasets.CIFAR10(root='../data', train=False, download=False, transform=transform_test)
+testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
 test_loader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, **kwargs)
 
 
