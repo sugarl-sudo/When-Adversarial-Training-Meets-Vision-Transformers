@@ -39,7 +39,7 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
         optimizer.step()
         x_adv.data.clamp_(0, 1)
     
-    breakpoint()
+    # breakpoint()
     return x_adv, y
 
 
