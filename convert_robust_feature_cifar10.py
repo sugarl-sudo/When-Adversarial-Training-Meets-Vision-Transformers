@@ -36,7 +36,8 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
             x_adv.grad[grad_norm == 0] = torch.randn_like(x_adv.grad[grad_norm == 0])
         optimizer.step()
         x_adv.data.clamp_(0, 1)
-        
+    
+    breakpoint()
     return x_adv, y
 
 

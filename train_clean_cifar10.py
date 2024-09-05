@@ -18,9 +18,9 @@ parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--test-batch-size', type=int, default=128, metavar='N',
                     help='input batch size for testing (default: 128)')
-parser.add_argument('--epochs', type=int, default=40, metavar='N',
+parser.add_argument('--epochs', type=int, default=100, metavar='N',
                     help='number of epochs to train')
-parser.add_argument('--weight-decay', '--wd', default=5e-4,
+parser.add_argument('--weight-decay', '--wd', default=2e-4,
                     type=float, metavar='W')
 parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
 #parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
@@ -42,8 +42,11 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='how many batches to wait before logging training status')
 #parser.add_argument('--model-dir', default='./model-cifar-ResNet18-clean',
-parser.add_argument('--model-dir', default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset',
+# parser.add_argument('--model-dir', default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset',
+#                     help='directory of model for saving checkpoint')
+parser.add_argument('--model-dir', default='./results/model-cifar-ResNet50',
                     help='directory of model for saving checkpoint')
+
 parser.add_argument('--save-freq', '-s', default=10, type=int, metavar='N',
                     help='save frequency')
 
@@ -69,8 +72,8 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
     #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # [-1 1]
 ])
-# trainset = torchvision.datasets.CIFAR10(root='../data', train=True, download=False, transform=transform_train)
-trainset = ImageFolder(root='./data/cifar10/robust_features', transform=transform_train)
+trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
+# trainset = ImageFolder(root='./data/cifar10/robust_features', transform=transform_train)
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, **kwargs)
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
 test_loader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, **kwargs)
@@ -156,8 +159,8 @@ def adjust_learning_rate(optimizer, epoch):
 
 def main():
     # init model, ResNet18() can be also used here for training
-    model = WideResNet(depth=34, widen_factor=10).to(device)
-    #model =  ResNet18().to(device)
+    # model = WideResNet(depth=34, widen_factor=10).to(device)
+    model =  ResNet50().to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
     for epoch in range(1, args.epochs + 1):
@@ -176,7 +179,7 @@ def main():
         # save checkpoint
         if epoch % args.save_freq == 0:
             torch.save(model.state_dict(),
-                       os.path.join(model_dir, 'model-wideres-epoch{}.pt'.format(epoch)))
+                       os.path.join(model_dir, 'model-res-epoch{}.pt'.format(epoch)))
             #torch.save(optimizer.state_dict(),
             #           os.path.join(model_dir, 'opt-wideres-checkpoint_epoch{}.tar'.format(epoch)))
 
