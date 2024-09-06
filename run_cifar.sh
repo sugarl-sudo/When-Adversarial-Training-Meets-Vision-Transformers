@@ -11,20 +11,23 @@
 #             --weight-decay 1e-4 \
 #             --momentum 0.9 \
 #             --batch-size 128 > ./results/vit-clean-robust_feature_dataset/process.log
-            
-# # wideresnet train non-robust feature dataset
-# out_dir="./results/wideres-clean-non_robust_feature_dataset"
-# CUDA_VISIBLE_DEVICES=2 python train_clean_cifar10.py --epochs 100 \
-#             --weight-decay 2e-4 \
-#             --momentum 0.9 \
-#             --model-dir $out_dir \
-#             --batch-size 128 > $out_dir/process.log
 
 
-# vit train standard
-out_dir="./results/vit-clean-standard"
-CUDA_VISIBLE_DEVICES=1 python train_clean_cifar10.py --epochs 40 \
-            --weight-decay 1e-4 \
+# wideresnet train non-robust feature dataset
+out_dir="./results/wideres-clean-non_robust_feature_dataset"
+mkdir -p $out_dir
+CUDA_VISIBLE_DEVICES=2 python train_clean_cifar10.py --epochs 100 \
+            --weight-decay 2e-4 \
             --momentum 0.9 \
             --model-dir $out_dir \
             --batch-size 128 > $out_dir/process.log
+
+
+# # vit train standard
+# out_dir="./results/vit-clean-standard"
+# mkdir -p $out_dir
+# CUDA_VISIBLE_DEVICES=1 python train_clean_cifar10.py --epochs 40 \
+#             --weight-decay 1e-4 \
+#             --momentum 0.9 \
+#             --model-dir $out_dir \
+#             --batch-size 128 > $out_dir/process.log

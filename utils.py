@@ -30,13 +30,13 @@ def normalize(args, X):
 
 def get_loaders(args):
     if args.dataset=="cifar":
-        mean =cifar10_mean
+        mean = cifar10_mean
         std = cifar10_std
     elif args.dataset=="imagenette" or args.dataset=="imagenet":
         mean = imagenet_mean
         std = imagenet_std
     train_list = [
-        transforms.Resize([args.resize,args.resize]),
+        transforms.Resize([args.resize, args.resize]),
         transforms.RandomCrop(args.crop, padding=4),
         transforms.RandomHorizontalFlip(),
     ]

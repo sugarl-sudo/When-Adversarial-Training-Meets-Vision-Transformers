@@ -9,6 +9,7 @@ from PIL import Image
 import random
 from tqdm import tqdm
 from torch.autograd import Variable
+from parser_cifar import get_args
 
 
 data_dir = 'data/'
@@ -80,9 +81,16 @@ def save_adv_examples(x_adv, y, out_dir, batch_num):
 def main():
     # Load Robust model
     # model = WideResNetProp(depth=34)
-    model = ResNet50().cuda()
+    # model = ResNet50().cuda()
     # model.load_state_dict(torch.load('../model-wideres-epoch99.pt'))
     # model.load_state_dict(torch.load('./results/model-cifar-ResNet50/model-res-epoch100.pt'))
+    from model_for_cifar.deit import deit_small_patch16_224
+    from parser_cifar import get_args
+    args_vit = get_args()
+    model = deit_small_patch16_224(pretrained=True, num_classes=10, img_size=args_vit.crop, patch_size=args_vit.patch, args=args_vit).cuda()
+    model = nn.DataParallel(model)
+    model.load_state_dict(torch.load('./results/vit-clean-standard/model-deit-epoch40.pt'))
+    
     model = model.cuda()
     trans = transforms.Compose([
         transforms.ToTensor(),

@@ -71,6 +71,7 @@ kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
+    # transforms.Resize((224, 224)),
     transforms.ToTensor(),
     #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # [-1 1]
 ])
@@ -78,9 +79,9 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
     #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # [-1 1]
 ])
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
+# trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
 # trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/robust_features-vit', transform=transform_train)
-# trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/non_robust_features', transform=transform_train)
+trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/non_robust_features-new', transform=transform_train)
 # trainset = ImageFolder(root='./data/cifar10/robust_features', transform=transform_train)
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, **kwargs)
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
@@ -105,7 +106,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
                           perturb_steps=args.num_steps,
                           beta=args.beta)
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip) # vitの学習の時は必要
+        # torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip) # vitの学習の時は必要
         optimizer.step()
         # print progress
         if batch_idx % args.log_interval == 0:
@@ -169,13 +170,12 @@ def main():
     # init model, ResNet18() can be also used here for training
     
     # wideresnet
-    # model = WideResNet(depth=34, widen_factor=10).to(device)
-    # model =  ResNet50().to(device)
+    model = WideResNet(depth=34, widen_factor=10).to(device)
     
-    # devit
-    vit_args = get_args()
-    model = deit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
-    model = torch.nn.DataParallel(model)
+    # # devit
+    # vit_args = get_args()
+    # model = deit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
+    # model = torch.nn.DataParallel(model)
     
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
@@ -198,7 +198,7 @@ def main():
         # save checkpoint
         if epoch % args.save_freq == 0:
             torch.save(model.state_dict(),
-                       os.path.join(model_dir, 'model-deit-epoch{}.pt'.format(epoch)))
+                       os.path.join(model_dir, 'model-res34_10-epoch{}.pt'.format(epoch)))
             #torch.save(optimizer.state_dict(),
             #           os.path.join(model_dir, 'opt-wideres-checkpoint_epoch{}.tar'.format(epoch)))
 

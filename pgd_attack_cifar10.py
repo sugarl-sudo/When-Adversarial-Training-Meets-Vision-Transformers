@@ -27,12 +27,12 @@ parser.add_argument('--step-size', default=0.5/255,
 parser.add_argument('--random',
                     default=True,
                     help='random initialization for PGD')
-#parser.add_argument('--model-path',
-#                    default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
-#                    help='model for white-box attack evaluation')
 parser.add_argument('--model-path',
-                    default='../wideres34-10.pt',
-                    help='model for white-box attack evaluation')
+                   default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
+                   help='model for white-box attack evaluation')
+# parser.add_argument('--model-path',
+#                     default='./results/vit-clean-robust_feature_dataset/model-deit-epoch40.pt',
+#                     help='model for white-box attack evaluation')
 parser.add_argument('--source-model-path',
                     default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
                     help='source model for black-box attack evaluation')
@@ -50,7 +50,10 @@ device = torch.device("cuda" if use_cuda else "cpu")
 kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
 # set up data loader
-transform_test = transforms.Compose([transforms.ToTensor(),])
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    # transforms.Resize((224, 224)),
+])
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
 test_loader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, **kwargs)
 
@@ -136,7 +139,9 @@ def eval_adv_test_whitebox(model, device, test_loader):
         robust_err_total += err_robust
         natural_err_total += err_natural
     print('natural_err_total: ', natural_err_total)
+    print('natural accuracy: ', 1 - natural_err_total / len(test_loader.dataset))
     print('robust_err_total: ', robust_err_total)
+    print('robust accuracy: ', 1 - robust_err_total / len(test_loader.dataset))
 
 
 def eval_adv_test_blackbox(model_target, model_source, device, test_loader):
@@ -156,7 +161,10 @@ def eval_adv_test_blackbox(model_target, model_source, device, test_loader):
         robust_err_total += err_robust
         natural_err_total += err_natural
     print('natural_err_total: ', natural_err_total)
+    print('natural accuracy: ', 1 - natural_err_total / len(test_loader.dataset))
     print('robust_err_total: ', robust_err_total)
+    print('robust accuracy: ', 1 - robust_err_total / len(test_loader.dataset))
+    
 
 
 def main():
@@ -164,6 +172,17 @@ def main():
     if args.white_box_attack:
         # white-box attack
         print('pgd white-box attack')
+        
+        # # Vit
+        # from model_for_cifar.deit import deit_small_patch16_224
+        # from parser_cifar import get_args
+        # args_vit = get_args()
+        # model = deit_small_patch16_224(pretrained=True, num_classes=10, img_size=args_vit.crop, patch_size=args_vit.patch, args=args_vit).to(device)
+        # # breakpoint()
+        # model = nn.DataParallel(model)
+        # model.load_state_dict(torch.load(args.model_path)['state_dict'])
+        
+        # wideresnet
         model = WideResNet(depth=34).to(device)
         model.load_state_dict(torch.load(args.model_path))
 
