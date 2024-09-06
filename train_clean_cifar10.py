@@ -12,6 +12,10 @@ from models.wideresnet import *
 from models.resnet import *
 from adv_training import clean_loss
 from torchvision.datasets import ImageFolder
+from parser_cifar import get_args
+from model_for_cifar.deit import deit_small_patch16_224
+from torch.optim.lr_scheduler import StepLR, MultiStepLR
+
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR TRADES Adversarial Training')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
@@ -27,6 +31,8 @@ parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
                     help='learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
                     help='SGD momentum')
+parser.add_argument('--clip', type=float, default=1.0, metavar='GC',
+                    help='gradient clip')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disables CUDA training')
 parser.add_argument('--epsilon', default=8./255*2,
@@ -44,7 +50,7 @@ parser.add_argument('--log-interval', type=int, default=100, metavar='N',
 #parser.add_argument('--model-dir', default='./model-cifar-ResNet18-clean',
 # parser.add_argument('--model-dir', default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset',
 #                     help='directory of model for saving checkpoint')
-parser.add_argument('--model-dir', default='./results/model-cifar-ResNet50',
+parser.add_argument('--model-dir', default='./results/vit-clean-robust_feature_dataset',
                     help='directory of model for saving checkpoint')
 
 parser.add_argument('--save-freq', '-s', default=10, type=int, metavar='N',
@@ -73,6 +79,8 @@ transform_test = transforms.Compose([
     #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # [-1 1]
 ])
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
+# trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/robust_features-vit', transform=transform_train)
+# trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/non_robust_features', transform=transform_train)
 # trainset = ImageFolder(root='./data/cifar10/robust_features', transform=transform_train)
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, **kwargs)
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
@@ -97,8 +105,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
                           perturb_steps=args.num_steps,
                           beta=args.beta)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip) # vitの学習の時は必要
         optimizer.step()
-
         # print progress
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -144,32 +152,43 @@ def eval_test(model, device, test_loader):
     return test_loss, test_accuracy
 
 
-def adjust_learning_rate(optimizer, epoch):
-    """decrease the learning rate"""
-    lr = args.lr
-    if epoch >= 75:
-        lr = args.lr * 0.1
-    if epoch >= 90:
-        lr = args.lr * 0.01
-    if epoch >= 100:
-        lr = args.lr * 0.001
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
+# def adjust_learning_rate(optimizer, epoch):
+#     """decrease the learning rate"""
+#     lr = args.lr
+#     if epoch >= 75:
+#         lr = args.lr * 0.1
+#     if epoch >= 90:
+#         lr = args.lr * 0.01
+#     if epoch >= 100:
+#         lr = args.lr * 0.001
+#     for param_group in optimizer.param_groups:
+#         param_group['lr'] = lr
 
 
 def main():
     # init model, ResNet18() can be also used here for training
+    
+    # wideresnet
     # model = WideResNet(depth=34, widen_factor=10).to(device)
-    model =  ResNet50().to(device)
+    # model =  ResNet50().to(device)
+    
+    # devit
+    vit_args = get_args()
+    model = deit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
+    model = torch.nn.DataParallel(model)
+    
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+    # scheduler = MultiStepLR(optimizer, milestones=[50, 75, 90], gamma=0.1)
 
     for epoch in range(1, args.epochs + 1):
         # adjust learning rate for SGD
-        adjust_learning_rate(optimizer, epoch)
-
+        # adjust_learning_rate(optimizer, epoch)
+        
         # adversarial training
         train(args, model, device, train_loader, optimizer, epoch)
-
+        scheduler.step()
+        
         # evaluation on natural examples
         print('================================================================')
         eval_train(model, device, train_loader)
@@ -179,7 +198,7 @@ def main():
         # save checkpoint
         if epoch % args.save_freq == 0:
             torch.save(model.state_dict(),
-                       os.path.join(model_dir, 'model-res-epoch{}.pt'.format(epoch)))
+                       os.path.join(model_dir, 'model-deit-epoch{}.pt'.format(epoch)))
             #torch.save(optimizer.state_dict(),
             #           os.path.join(model_dir, 'opt-wideres-checkpoint_epoch{}.tar'.format(epoch)))
 

@@ -26,7 +26,11 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
         # optmize
         optimizer.zero_grad()
         with torch.enable_grad():
-            loss = criterion(model(x_adv)[1], model(x_natural)[1])
+            # WideResNetProp
+            # loss = criterion(model(x_adv)[1], model(x_natural)[1])
+            # DeiT
+            loss = criterion(model.module.forward_features(x_adv), 
+                            model.module.forward_features(x_natural))
         
         # if i % 100 == 0:
         #     print(f'Loss at iteration {i}: {loss.item()}')

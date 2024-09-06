@@ -36,7 +36,7 @@ def clean_loss(model,
     optimizer.zero_grad()
     # calculate robust loss
     logits = model(X)
-    #
+    # breakpoint()
     loss_natural = F.cross_entropy(logits, y)
     loss = loss_natural
     return loss

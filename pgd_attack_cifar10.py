@@ -18,17 +18,20 @@ parser.add_argument('--test-batch-size', type=int, default=200, metavar='N',
                     help='input batch size for testing (default: 200)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disables CUDA training')
-parser.add_argument('--epsilon', default=0.25,
+parser.add_argument('--epsilon', default=2./255,
                     help='perturbation')
 parser.add_argument('--num-steps', default=20,
                     help='perturb number of steps')
-parser.add_argument('--step-size', default=0.003,
+parser.add_argument('--step-size', default=0.5/255,
                     help='perturb step size')
 parser.add_argument('--random',
                     default=True,
                     help='random initialization for PGD')
+#parser.add_argument('--model-path',
+#                    default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
+#                    help='model for white-box attack evaluation')
 parser.add_argument('--model-path',
-                    default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
+                    default='../wideres34-10.pt',
                     help='model for white-box attack evaluation')
 parser.add_argument('--source-model-path',
                     default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset/model-wideres-epoch90.pt',
@@ -82,7 +85,7 @@ def _pgd_whitebox(model,
     # l-2 PGD
     # for _ in range(num_steps):
     err_pgd = (model(X_pgd).data.max(1)[1] != y.data).float().sum()
-    # print('err pgd (white-box): ', err_pgd)
+    print('err pgd (white-box): ', err_pgd)
     return err, err_pgd
 
 

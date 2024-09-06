@@ -12,7 +12,7 @@ from torch.autograd import Variable
 
 
 data_dir = 'data/'
-out_dir = 'data/cifar10/non_robust_features'
+out_dir = 'data/cifar10/non_robust_features-vit'
 cifar10_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 def l2_pgd(x_natural, x_random, y, model, epsilon=0.5, perturb_steps=100, step_size=0.1):
@@ -20,7 +20,9 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.5, perturb_steps=100, step_s
     delta = 0.001 * torch.randn(x_natural.shape).cuda().detach()
     delta = Variable(delta.data, requires_grad=True)
     optimizer = torch.optim.SGD([delta], lr=step_size)
-    t = (y.clone().detach().cuda() + 1) % 10
+    # t = (y.clone().detach().cuda() + 1) % 10
+    t = torch.randint(0, 10, (batch_size,)).cuda()
+    # breakpoint()
     criterion = nn.CrossEntropyLoss()
     for i in tqdm(range(perturb_steps), desc='PGD Iterations'):
         adv = x_natural + delta
@@ -80,7 +82,7 @@ def main():
     # model = WideResNetProp(depth=34)
     model = ResNet50().cuda()
     # model.load_state_dict(torch.load('../model-wideres-epoch99.pt'))
-    model.load_state_dict(torch.load('./results/model-cifar-ResNet50/model-res-epoch100.pt'))
+    # model.load_state_dict(torch.load('./results/model-cifar-ResNet50/model-res-epoch100.pt'))
     model = model.cuda()
     trans = transforms.Compose([
         transforms.ToTensor(),
@@ -93,9 +95,9 @@ def main():
         x_random = get_random_batch(train_dataset, len(x_natural))
         x_random = x_random.cuda()
         y = y.cuda()
-        x_adv, _ = l2_pgd(x_natural, x_random, y, model, epsilon=1.0, perturb_steps=100, step_size=0.1)
+        x_adv, t = l2_pgd(x_natural, x_random, y, model, epsilon=1.5, perturb_steps=100, step_size=0.1)
         
-        save_adv_examples(x_adv, y, out_dir, batch_num)
+        save_adv_examples(x_adv, t, out_dir, batch_num)
 
 
 if __name__ == '__main__':
