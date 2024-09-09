@@ -13,8 +13,10 @@ from parser_cifar import get_args
 
 
 data_dir = 'data/'
-out_dir = 'data/cifar10/robust_features-vit'
+out_dir = 'data/cifar10/robust_features-vit-new'
 cifar10_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+cifar10_mean = (0.4914, 0.4822, 0.4465)
+cifar10_std = (0.2471, 0.2435, 0.2616)
 
 def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
     batch_size = len(x_natural)
@@ -22,6 +24,10 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
     x_adv = Variable(x_adv.data, requires_grad=True)
     optimizer = torch.optim.SGD([x_adv], lr=epsilon)
     criterion = nn.MSELoss()
+    mu = torch.tensor(cifar10_mean).view(3, 1, 1).cuda()
+    std = torch.tensor(cifar10_std).view(3, 1, 1).cuda()
+    lower_limit = ((0 - mu) / std)
+    upper_limit = ((1 - mu) / std)
     for i in tqdm(range(perturb_steps), desc='PGD Iterations'):
         # optmize
         optimizer.zero_grad()
@@ -32,8 +38,6 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
             loss = criterion(model.module.forward_features(x_adv), 
                             model.module.forward_features(x_natural))
         
-        # if i % 100 == 0:
-        #     print(f'Loss at iteration {i}: {loss.item()}')
         loss.backward()
         grad_norm = x_adv.grad.view(batch_size, -1).norm(p=2, dim=1)
         x_adv.grad.div_(grad_norm.view(-1, 1, 1, 1))
@@ -41,7 +45,8 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000):
         if (grad_norm == 0).any():
             x_adv.grad[grad_norm == 0] = torch.randn_like(x_adv.grad[grad_norm == 0])
         optimizer.step()
-        x_adv.data.clamp_(0, 1)
+        # x_adv.data.clamp_(0, 1)
+        x_adv.data.clamp_(lower_limit, upper_limit)
     
     # breakpoint()
     return x_adv, y
@@ -52,6 +57,13 @@ def get_random_batch(dataset, batch_size):
     indices = random.sample(range(len(dataset)), batch_size)
     random_samples = [dataset[i][0] for i in indices]
     return torch.stack(random_samples)  # stack into a batch
+
+# 逆正規化のための関数
+def denormalize(img, mean, std):
+    mean = torch.tensor(mean).view(3, 1, 1)
+    std = torch.tensor(std).view(3, 1, 1)
+    img = img * std + mean
+    return img
 
 def save_adv_examples(x_adv, y, out_dir, batch_num):
     # Ensure output directories exist
@@ -67,6 +79,7 @@ def save_adv_examples(x_adv, y, out_dir, batch_num):
         file_path = os.path.join(label_dir, file_name)
         # Convert to PIL image and save
         adv_img = adv_img.detach().cpu()  # move to CPU
+        adv_img = denormalize(adv_img, cifar10_mean, cifar10_std)  # denormalize
         adv_img = (adv_img * 255).clamp(0, 255).byte()  # scale to 0-255 and convert to byte
         adv_img = transforms.ToPILImage()(adv_img)  # convert to PIL image
         adv_img.save(file_path)
@@ -86,6 +99,7 @@ def main():
         # transforms.RandomCrop(32, padding=4),
         # transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
+        transforms.Normalize(cifar10_mean, cifar10_std)
     ])
     # Load CIFAR10 dataset
     train_dataset = torchvision.datasets.CIFAR10(root=data_dir, train=True, download=False, transform=trans)
@@ -95,7 +109,7 @@ def main():
         x_random = get_random_batch(train_dataset, len(x_natural))
         x_random = x_random.cuda()
         y = y.cuda()
-        x_adv, _ = l2_pgd(x_natural, x_random, y, model, epsilon=0.3, perturb_steps=333)
+        x_adv, _ = l2_pgd(x_natural, x_random, y, model, epsilon=0.1, perturb_steps=1000)
         
         save_adv_examples(x_adv, y, out_dir, batch_num)
 
