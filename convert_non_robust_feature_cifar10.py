@@ -21,8 +21,8 @@ def l2_pgd(x_natural, x_random, y, model, epsilon=0.5, perturb_steps=100, step_s
     delta = 0.001 * torch.randn(x_natural.shape).cuda().detach()
     delta = Variable(delta.data, requires_grad=True)
     optimizer = torch.optim.SGD([delta], lr=step_size)
-    # t = (y.clone().detach().cuda() + 1) % 10
-    t = torch.randint(0, 10, (batch_size,)).cuda()
+    t = (y.clone().detach().cuda() + 1) % 10
+    # t = torch.randint(0, 10, (batch_size,)).cuda()
     # breakpoint()
     criterion = nn.CrossEntropyLoss()
     for i in tqdm(range(perturb_steps), desc='PGD Iterations'):

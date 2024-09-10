@@ -27,8 +27,8 @@ if args.load:
     args.out_dir = args.out_dir + "_load"
 
 
-args.out_dir = args.out_dir + "/weight_decay_{:.6f}/".format(
-        args.weight_decay)+ "drop_rate_{:.6f}/".format(args.drop_rate)+"nw_{:.6f}/".format(args.n_w)
+# args.out_dir = args.out_dir + "/weight_decay_{:.6f}/".format(
+        # args.weight_decay)+ "drop_rate_{:.6f}/".format(args.drop_rate)+"nw_{:.6f}/".format(args.n_w)
 
 
 print(args.out_dir)

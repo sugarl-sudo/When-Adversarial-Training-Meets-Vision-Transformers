@@ -13,21 +13,34 @@
 #             --batch-size 128 > ./results/vit-clean-robust_feature_dataset/process.log
 
 
-# wideresnet train non-robust feature dataset
-out_dir="./results/wideres-clean-non_robust_feature_dataset"
-mkdir -p $out_dir
-CUDA_VISIBLE_DEVICES=2 python train_clean_cifar10.py --epochs 100 \
-            --weight-decay 2e-4 \
-            --momentum 0.9 \
-            --model-dir $out_dir \
-            --batch-size 128 > $out_dir/process.log
-
-
-# # vit train standard
-# out_dir="./results/vit-clean-standard"
+# # wideresnet train non-robust feature dataset
+# out_dir="./results/wideres-clean-non_robust_feature_dataset"
 # mkdir -p $out_dir
-# CUDA_VISIBLE_DEVICES=1 python train_clean_cifar10.py --epochs 40 \
-#             --weight-decay 1e-4 \
+# CUDA_VISIBLE_DEVICES=2 python train_clean_cifar10.py --epochs 100 \
+#             --weight-decay 2e-4 \
 #             --momentum 0.9 \
 #             --model-dir $out_dir \
 #             --batch-size 128 > $out_dir/process.log
+
+
+# # vit-small train TRADES
+# out_dir="./results/vit_small_trades"
+# mkdir -p $out_dir
+# CUDA_VISIBLE_DEVICES=1 python train_cifar.py --model-path "vit_small_patch16_224" \
+#             --method "TRADES" \
+#             --seed 0 > $out_dir/process.log &
+
+# # convit-small train TRADES
+# out_dir="./results/convit_small_trades"
+# mkdir -p $out_dir
+# CUDA_VISIBLE_DEVICES=2 python train_cifar.py --model-path "convit_small" \
+#             --method "TRADES" \
+#             --seed 0 > $out_dir/process.log &
+
+# vit-small train standard
+out_dir="./results/vit_small_standard"
+mkdir -p $out_dir
+CUDA_VISIBLE_DEVICES=3 python train_clean_cifar10.py --epoch 40 \
+            --weight-decay 1e-4 \
+            --model-dir $out_dir \
+            --momentum 0.9 > $out_dir/process.log &
