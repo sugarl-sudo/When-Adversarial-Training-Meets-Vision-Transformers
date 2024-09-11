@@ -13,7 +13,7 @@ from parser_cifar import get_args
 
 
 data_dir = 'data/'
-out_dir = 'data/cifar10/non_robust_features-vit'
+out_dir = 'data/cifar10/non_robust_features-vit-shift'
 cifar10_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
 def l2_pgd(x_natural, x_random, y, model, epsilon=0.5, perturb_steps=100, step_size=0.1):
@@ -103,7 +103,7 @@ def main():
         x_random = get_random_batch(train_dataset, len(x_natural))
         x_random = x_random.cuda()
         y = y.cuda()
-        x_adv, t = l2_pgd(x_natural, x_random, y, model, epsilon=1.5, perturb_steps=100, step_size=0.1)
+        x_adv, t = l2_pgd(x_natural, x_random, y, model, epsilon=2.0, perturb_steps=100, step_size=0.1)
         
         save_adv_examples(x_adv, t, out_dir, batch_num)
 

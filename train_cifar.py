@@ -105,6 +105,9 @@ model.train()
 if args.load:
     checkpoint = torch.load(args.load_path)
     model.load_state_dict(checkpoint['state_dict'])
+    for param in model.parameters():
+        param.requires_grad = True
+    logging.info('model requires_grad: {}'.format(param.requires_grad))
 
 
 def evaluate_natural(args, model, test_loader, verbose=False):

@@ -53,6 +53,8 @@ parser.add_argument('--model-dir', default='./results/',
 
 parser.add_argument('--save-freq', '-s', default=10, type=int, metavar='N',
                     help='save frequency')
+parser.add_argument('--body-freaze', action='store_true', help='Freeze the body of the model')
+parser.add_argument('--dataset-path', default='', help='path to the dataset')
 
 args = parser.parse_args()
 
@@ -78,10 +80,11 @@ transform_test = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(cifar10_mean, cifar10_std),
 ])
-# trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
-trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/robust_features-vit-new', transform=transform_train)
-# trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/non_robust_features-new', transform=transform_train)
-# trainset = ImageFolder(root='./data/cifar10/robust_features', transform=transform_train)
+if args.dataset_path == '':
+    trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
+else:
+    trainset = ImageFolder(args.dataset_path, transform=transform_train)
+
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, **kwargs)
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
 test_loader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, **kwargs)
@@ -157,6 +160,16 @@ def main():
     model = deit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
     model = torch.nn.DataParallel(model)
     
+    if args.body_freaze:
+        for name, param in model.named_parameters():
+            if 'head' in name:
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+            
+        for name, param in model.named_parameters():
+            if param.requires_grad:
+                print('requires_grad True', name)
     # # vit
     # vit_args = get_args()
     # model = vit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
