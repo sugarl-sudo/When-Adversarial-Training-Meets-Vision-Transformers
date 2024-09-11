@@ -51,6 +51,7 @@ def get_args():
                         help='Probability of switching to cutmix when both mixup and cutmix enabled')
     parser.add_argument('--mixup-mode', type=str, default='batch',
                         help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
+    parser.add_argument('--body-freaze', action='store_true', help='Freeze the body of the model')
     args = parser.parse_known_args()[0]
     assert args.batch_size % args.accum_steps == 0
     return args

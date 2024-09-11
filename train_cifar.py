@@ -15,8 +15,8 @@ from evaluate import evaluate_aa
 from auto_LiRPA.utils import logger
 args = get_args()
 
-args.out_dir = args.out_dir+"_"+args.dataset+"_"+args.model+"_"+args.method+"_warmup"
-args.out_dir = args.out_dir +"/seed"+str(args.seed)
+# args.out_dir = args.out_dir+"_"+args.dataset+"_"+args.model+"_"+args.method+"_warmup"
+# args.out_dir = args.out_dir +"/seed"+str(args.seed)
 if args.ARD:
     args.out_dir = args.out_dir + "_ARD"
 if args.PRM:
@@ -70,6 +70,13 @@ elif args.model == "deit_small_patch16_224":
     model = deit_small_patch16_224(pretrained = (not args.scratch),img_size=crop_size,num_classes =10, patch_size=args.patch, args=args).cuda()
     model = nn.DataParallel(model)
     logger.info('Model{}'.format(model))
+    if args.body_freaze:
+        for name, param in model.named_parameters():
+            if 'head' not in name:
+                param.requires_grad = False
+        for name, param in model.named_parameters():
+            logging.info('name: {}, require_grad: {}'.format(name, param.requires_grad))
+
 elif args.model == "deit_tiny_patch16_224":
     from model_for_cifar.deit import  deit_tiny_patch16_224
     model = deit_tiny_patch16_224(pretrained = (not args.scratch),img_size=crop_size,num_classes =10,patch_size=args.patch, args=args).cuda()

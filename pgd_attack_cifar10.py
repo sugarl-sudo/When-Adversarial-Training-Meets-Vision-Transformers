@@ -19,7 +19,7 @@ parser.add_argument('--test-batch-size', type=int, default=200, metavar='N',
                     help='input batch size for testing (default: 200)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disables CUDA training')
-parser.add_argument('--epsilon', default=16.,
+parser.add_argument('--epsilon', default=4.,
                     help='perturbation')
 parser.add_argument('--num-steps', default=20,
                     help='perturb number of steps')
@@ -120,7 +120,7 @@ def _pgd_whitebox(model,
         output = model(X + delta)
         index = torch.where(output.max(1)[1] == y)
         # breakpoint()
-        index = (torch.range(0, 199, dtype=torch.int64), _)
+        # index = (torch.range(0, 199, dtype=torch.int64), _)
         # breakpoint()
         # index = torch.range()
         # breakpoint()
@@ -154,9 +154,9 @@ def _pgd_whitebox(model,
     delta_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_delta_batch{batch_num}.png')
     X_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_X_batch{batch_num}.png')
     X_adv_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_X_adv_batch{batch_num}.png')
-    _pgd_img_save(delta[:24], delta_path)
-    _pgd_img_save(X[:24], X_path)
-    _pgd_img_save(X_pgd[:24], X_adv_path)
+    # _pgd_img_save(delta[:24], delta_path)
+    # _pgd_img_save(X[:24], X_path)
+    # _pgd_img_save(X_pgd[:24], X_adv_path)
     # breakpoint()
     return err, err_pgd
 
@@ -255,7 +255,7 @@ def main():
         # breakpoint()
         model = nn.DataParallel(model)
         model.eval()
-        # model.load_state_dict(torch.load(args.model_path)['state_dict'])
+        model.load_state_dict(torch.load(args.model_path))
         print(model)
         print(args_vit)
         

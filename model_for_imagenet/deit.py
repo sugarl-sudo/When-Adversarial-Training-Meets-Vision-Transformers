@@ -567,4 +567,11 @@ def deit_small_patch16_224(pretrained=False, patch_size=16, args=None, **kwargs)
     """
     model_kwargs = dict(patch_size=patch_size, embed_dim=384, depth=12, num_heads=6, **kwargs)
     model = _create_vision_transformer('deit_small_patch16_224', pretrained=pretrained,args=args, **model_kwargs)
+    if args.freaze_body:
+        for name, param in model.named_parameters():
+            if 'head' not in name:
+                params.requires_grad = False
+        
+        for name, param in model.named_parameters():
+            print(f'{name}: requires_grad={param.requires_grad}')
     return model

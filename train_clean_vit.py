@@ -48,9 +48,6 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--log-interval', type=int, default=100, metavar='N',
                     help='how many batches to wait before logging training status')
-#parser.add_argument('--model-dir', default='./model-cifar-ResNet18-clean',
-# parser.add_argument('--model-dir', default='./results/model-cifar-wideResNet34-10-clean-robust_feature_dataset',
-#                     help='directory of model for saving checkpoint')
 parser.add_argument('--model-dir', default='./results/',
                     help='directory of model for saving checkpoint')
 
@@ -68,20 +65,21 @@ torch.manual_seed(args.seed)
 device = torch.device("cuda" if use_cuda else "cpu")
 kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
+cifar10_mean = (0.4914, 0.4822, 0.4465)
+cifar10_std = (0.2023, 0.1994, 0.2010)
 # setup data loader
 transform_train = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
-    # transforms.Resize((224, 224)),
     transforms.ToTensor(),
-    #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # [-1 1]
+    transforms.Normalize(cifar10_mean, cifar10_std),
 ])
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    #transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # [-1 1]
+    transforms.Normalize(cifar10_mean, cifar10_std),
 ])
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
-# trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/robust_features-vit', transform=transform_train)
+# trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform_train)
+trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/robust_features-vit-new', transform=transform_train)
 # trainset = torchvision.datasets.ImageFolder(root='./data/cifar10/non_robust_features-new', transform=transform_train)
 # trainset = ImageFolder(root='./data/cifar10/robust_features', transform=transform_train)
 train_loader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, **kwargs)
@@ -153,43 +151,21 @@ def eval_test(model, device, test_loader):
     test_accuracy = correct / len(test_loader.dataset)
     return test_loss, test_accuracy
 
-
-# def adjust_learning_rate(optimizer, epoch):
-#     """decrease the learning rate"""
-#     lr = args.lr
-#     if epoch >= 75:
-#         lr = args.lr * 0.1
-#     if epoch >= 90:
-#         lr = args.lr * 0.01
-#     if epoch >= 100:
-#         lr = args.lr * 0.001
-#     for param_group in optimizer.param_groups:
-#         param_group['lr'] = lr
-
-
 def main():
-    # init model, ResNet18() can be also used here for training
-    
-    # # wideresnet
-    # model = WideResNet(depth=34, widen_factor=10).to(device)
-    
-    # # deit
-    # vit_args = get_args()
-    # model = deit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
-    # model = torch.nn.DataParallel(model)
-    
-    # vit
+    # deit
     vit_args = get_args()
-    model = vit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
+    model = deit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
     model = torch.nn.DataParallel(model)
     
+    # # vit
+    # vit_args = get_args()
+    # model = vit_small_patch16_224(pretrained=True, img_size=vit_args.crop, patch_size=vit_args.patch, num_classes=10, args=vit_args).to(device)
+    # model = torch.nn.DataParallel(model)
+    
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-    # scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
     scheduler = MultiStepLR(optimizer, milestones=[20, 30], gamma=0.1)
 
     for epoch in range(1, args.epochs + 1):
-        # adjust learning rate for SGD
-        # adjust_learning_rate(optimizer, epoch)
         
         # adversarial training
         train(args, model, device, train_loader, optimizer, epoch)
@@ -204,9 +180,7 @@ def main():
         # save checkpoint
         if epoch % args.save_freq == 0:
             torch.save(model.state_dict(),
-                       os.path.join(model_dir, 'model-vit-epoch{}.pt'.format(epoch)))
-            #torch.save(optimizer.state_dict(),
-            #           os.path.join(model_dir, 'opt-wideres-checkpoint_epoch{}.tar'.format(epoch)))
+                       os.path.join(model_dir, 'model-deit-epoch{}.pt'.format(epoch)))
 
 
 if __name__ == '__main__':
