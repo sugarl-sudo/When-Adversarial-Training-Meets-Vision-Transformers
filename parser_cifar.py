@@ -52,6 +52,9 @@ def get_args():
     parser.add_argument('--mixup-mode', type=str, default='batch',
                         help='How to apply mixup/cutmix params. Per "batch", "pair", or "elem"')
     parser.add_argument('--body-freaze', action='store_true', help='Freeze the body of the model')
+    parser.add_argument('--lbgat', action='store_true', help='Use LBGAT loss')
+    parser.add_argument('--lbgat-beta', type=float, default=1.0)
+    parser.add_argument('--teacher-model-path', type=str, default='')
     args = parser.parse_known_args()[0]
     assert args.batch_size % args.accum_steps == 0
     return args

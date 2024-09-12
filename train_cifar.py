@@ -13,6 +13,7 @@ from torch.autograd import Variable
 from pgd import evaluate_pgd,evaluate_CW
 from evaluate import evaluate_aa
 from auto_LiRPA.utils import logger
+from lbgat import lbgat_loss
 args = get_args()
 
 # args.out_dir = args.out_dir+"_"+args.dataset+"_"+args.model+"_"+args.method+"_warmup"
@@ -104,7 +105,8 @@ model.train()
 
 if args.load:
     checkpoint = torch.load(args.load_path)
-    model.load_state_dict(checkpoint['state_dict'])
+    # model.load_state_dict(checkpoint['state_dict'])
+    model.load_state_dict(checkpoint)
     for param in model.parameters():
         param.requires_grad = True
     logging.info('model requires_grad: {}'.format(param.requires_grad))
@@ -126,7 +128,7 @@ def evaluate_natural(args, model, test_loader, verbose=False):
         logger.info('Evaluation {}'.format(meter))
 
 
-def train_adv(args, model, ds_train, ds_test, logger):
+def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
     mu = torch.tensor(cifar10_mean).view(3, 1, 1).cuda()
     std = torch.tensor(cifar10_std).view(3, 1, 1).cuda()
 
@@ -255,10 +257,25 @@ def train_adv(args, model, ds_train, ds_test, logger):
                         for handle in handle_list:
                             handle.remove()
                     return delta
-                delta = pgd_attack()
-                X_adv = X + delta
-                output = model(X_adv)
-                loss = criterion(output, y)
+                
+                if args.lbgat:
+                    mse = torch.nn.MSELoss()
+                    ce = torch.nn.CrossEntropyLoss()
+                    
+                    delta = pgd_attack()
+                    X_adv = X + delta
+                    out_adv = model(X_adv)
+                    out_natural = model(X)
+                    out = model_teacher(X)
+                    loss_mse = mse(out_adv, out) + ce(out, y)
+                    loss_kl = (1.0 / out.size(0)) * criterion_kl(F.log_softmax(out_adv, dim=1),
+                                                                F.softmax(out_natural, dim=1))
+                    loss = loss_mse + args.lbgat_beta * loss_kl
+                else:
+                    delta = pgd_attack()
+                    X_adv = X + delta
+                    output = model(X_adv)
+                    loss = criterion(output, y)
             elif args.method == 'TRADES':
                 X = X.cuda()
                 y = y.cuda()

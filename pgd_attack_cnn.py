@@ -107,8 +107,8 @@ def _pgd_whitebox(model,
     err_pgd = (model(X_pgd).data.max(1)[1] != y.data).float().sum()
     
     delta = X_pgd - X
-    _pgd_img_save(delta[:24], f'./pgd/pgd_delta_{batch_num}.png')
-    _pgd_img_save(X[:24], f'./pgd/pgd_X_{batch_num}.png')
+    # _pgd_img_save(delta[:24], f'./pgd/pgd_delta_{batch_num}.png')
+    # _pgd_img_save(X[:24], f'./pgd/pgd_X_{batch_num}.png')
     # breakpoint()
     return err, err_pgd
 
