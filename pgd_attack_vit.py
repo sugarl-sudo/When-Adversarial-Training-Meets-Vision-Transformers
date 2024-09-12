@@ -57,7 +57,6 @@ inv_cifar10_std = (1/0.2471, 1/0.2435, 1/0.2616)
 # set up data loader
 transform_test = transforms.Compose([
     transforms.ToTensor(),
-    # transforms.Resize((224, 224)),
     transforms.Normalize(cifar10_mean, cifar10_std),
 ])
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=False, transform=transform_test)
@@ -101,29 +100,17 @@ def _pgd_whitebox(model,
     alpha = (step_size / 255.) / std
     out = model(X)
     err = (out.data.max(1)[1] != y.data).float().sum()
-    # X_pgd = Variable(X.data, requires_grad=True)
     if args.random:
-        # epsilonがテンソルの場合はスカラー値に変換
-        # epsilon_value = epsilon.item() if isinstance(epsilon, torch.Tensor) else epsilon
-        # random_noise = torch.FloatTensor(*X_pgd.shape).uniform_(-epsilon_value, epsilon_value).to(device)
         delta = torch.zeros_like(X).cuda()
         for i in range(len(epsilon)):
             delta[:, i, :, :].uniform_(-epsilon[i][0][0].item(), epsilon[i][0][0].item())
         delta.data = torch.clamp(delta, lower_limit - X, upper_limit - X)
-        # X_pgd = Variable(X_pgd.data + random_noise, requires_grad=True)
         delta = Variable(delta, requires_grad=True)
 
     # l-inf PGD
     for _ in range(num_steps):
-        # opt = optim.SGD([X_pgd], lr=1e-3)
-        # opt.zero_grad()
         output = model(X + delta)
         index = torch.where(output.max(1)[1] == y)
-        # breakpoint()
-        # index = (torch.range(0, 199, dtype=torch.int64), _)
-        # breakpoint()
-        # index = torch.range()
-        # breakpoint()
         with torch.enable_grad():
             loss = nn.CrossEntropyLoss()(output, y)
         loss.backward()
@@ -134,16 +121,7 @@ def _pgd_whitebox(model,
         d = torch.clamp(d, lower_limit - X[index[0], :, :, :], upper_limit - X[index[0], :, :, :])
         delta.data[index[0], :, :, :] = d
         delta.grad.zero_()
-    # all_loss = nn.CrossEntropyLoss()(model(X + delta), y, reduction='none').detach()
-    # max_delta[all_loss >= max_loss] = delta.detach()[all_loss >= max_loss]
     X_pgd = Variable(X + delta, requires_grad=False)
-        # eta = step_size * X_pgd.grad.data.sign()
-        # X_pgd = Variable(X_pgd.data + eta, requires_grad=True)
-        # eta = torch.clamp(X_pgd.data - X.data, -epsilon, epsilon)
-        # X_pgd = Variable(X.data + eta, requires_grad=True)
-        # # X_pgd = Variable(torch.clamp(X_pgd, 0, 1.0), requires_grad=True)
-        # X_pgd = Variable(torch.clamp(X_pgd, lower_limit - X[index[0], :, :, :], upper_limit - X[index[0], :, :, :]), requires_grad=True)
-        
     # l-2 PGD
     # for _ in range(num_steps):
     err_pgd = (model(X_pgd).data.max(1)[1] != y.data).float().sum()
@@ -244,14 +222,15 @@ def main():
         
         # Vit
         from model_for_cifar.deit import deit_small_patch16_224, deit_tiny_patch16_224
-        # from model_for_cifar.vit import vit_base_patch16_224
+        from model_for_cifar.vit import vit_base_patch16_224, vit_small_patch16_224
         from parser_cifar import get_args
         args_vit = get_args()
-        args_vit.model = 'deit_small_patch16_224'
-        args_vit.method = 'TRADES'
+        # args_vit.model = 'deit_small_patch16_224'
+        args_vit.model = 'vit_small_patch16_224'
         model = deit_small_patch16_224(pretrained=True, num_classes=10, img_size=32, patch_size=4, args=args_vit).cuda()
         # model = vit_base_patch16_224(pretrained=True, num_classes=10, img_size=32, patch_size=4, args=args_vit).cuda()
         # model = deit_tiny_patch16_224(pretrained=True, num_classes=10, img_size=32, patch_size=4, args=args_vit).cuda()
+        # model = vit_small_patch16_224(pretrained=True, num_classes=10, img_size=32, patch_size=4, args=args_vit).cuda()
         # breakpoint()
         model = nn.DataParallel(model)
         model.eval()

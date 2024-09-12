@@ -27,15 +27,25 @@
 #             --batch-size 128 > $out_dir/process.log
 
 
-# vit-small train TRADES
-out_dir="./results/deit_small_clean_lp-ft"
+# vit-small train AT
+out_dir="./results/deit_small_at"
+mkdir -p $out_dir
+CUDA_VISIBLE_DEVICES=2 python train_cifar.py --model "deit_small_patch16_224" \
+            --method "AT" \
+            --out-dir $out_dir \
+            --seed 0 &
+
+# vit-small train AT with LBGAT
+out_dir="./results/deit_small_at_lbgat"
 mkdir -p $out_dir
 CUDA_VISIBLE_DEVICES=3 python train_cifar.py --model "deit_small_patch16_224" \
-            --method "TRADES" \
+            --method "AT" \
             --out-dir $out_dir \
-            --load \
-            --load_path "./results/deit_small_clean_body_freaze/model-deit-epoch40.pt" \
-            --seed 0 &
+            --seed 0 \
+            --lbgat \
+            --lbgat-beta 1.0 \
+            --teacher-model-path "./results/deit_small_standard/model-deit-epoch40.pt" &
+
 
 # # convit-small train TRADES
 # out_dir="./results/convit_small_trades"
@@ -45,10 +55,9 @@ CUDA_VISIBLE_DEVICES=3 python train_cifar.py --model "deit_small_patch16_224" \
 #             --seed 0 > $out_dir/process.log &
 
 # # vit-small train standard
-# out_dir="./results/deit_small_clean_body_freaze"
+# out_dir="./results/deit_small_standard"
 # mkdir -p $out_dir
-# CUDA_VISIBLE_DEVICES=3 python train_clean_vit.py --epoch 40 \
+# CUDA_VISIBLE_DEVICES=1 python train_clean_vit.py --epoch 40 \
 #             --weight-decay 1e-4 \
 #             --model-dir $out_dir \
-#             --body-freaze \
 #             --momentum 0.9 > $out_dir/process.log &

@@ -102,6 +102,15 @@ else:
     raise ValueError("Model doesn't exist！")
 model.train()
 
+if args.lbgat:
+    from model_for_cifar.deit import deit_small_patch16_224
+    model_teacher = deit_small_patch16_224(pretrained=True, img_size=crop_size, num_classes=10, patch_size=args.patch,args=args).cuda()
+    model_teacher = nn.DataParallel(model_teacher)
+    
+    checkpoint = torch.load(args.teacher_model_path)
+    model.load_state_dict(checkpoint)
+    
+
 
 if args.load:
     checkpoint = torch.load(args.load_path)
@@ -260,17 +269,16 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                 
                 if args.lbgat:
                     mse = torch.nn.MSELoss()
-                    ce = torch.nn.CrossEntropyLoss()
+                    ce = SoftTargetCrossEntropy()
                     
                     delta = pgd_attack()
                     X_adv = X + delta
-                    out_adv = model(X_adv)
-                    out_natural = model(X)
-                    out = model_teacher(X)
-                    loss_mse = mse(out_adv, out) + ce(out, y)
-                    loss_kl = (1.0 / out.size(0)) * criterion_kl(F.log_softmax(out_adv, dim=1),
-                                                                F.softmax(out_natural, dim=1))
-                    loss = loss_mse + args.lbgat_beta * loss_kl
+                    output = model(X_adv)
+                    out_teacher = model_teacher(X)
+                    loss_mse = mse(output, out_teacher) # if LBGAT, +ce(out, y)
+                    loss_ce = ce(output, y)
+                    
+                    loss = loss_mse + args.lbgat_beta * loss_ce
                 else:
                     delta = pgd_attack()
                     X_adv = X + delta
@@ -419,8 +427,10 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
             torch.save({'state_dict': model.state_dict(), 'epoch': epoch, 'opt': opt.state_dict()}, path)
             logger.info('Checkpoint saved to {}'.format(path))
 
-
-train_adv(args, model, train_loader, test_loader, logger)
+if args.lbgat:
+    train_adv(args, model, train_loader, test_loader, logger, model_teacher=model_teacher)
+else:
+    train_adv(args, model, train_loader, test_loader, logger)
 
 args.eval_iters = 20
 logger.info(args.out_dir)
