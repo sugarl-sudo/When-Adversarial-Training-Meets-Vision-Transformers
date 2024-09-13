@@ -108,7 +108,8 @@ if args.lbgat:
     model_teacher = nn.DataParallel(model_teacher)
     
     checkpoint = torch.load(args.teacher_model_path)
-    model.load_state_dict(checkpoint)
+    model_teacher.load_state_dict(checkpoint)
+    model_teacher.eval()
     
 
 
@@ -270,15 +271,23 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                 if args.lbgat:
                     mse = torch.nn.MSELoss()
                     ce = SoftTargetCrossEntropy()
-                    
+                    model_teacher.train()
                     delta = pgd_attack()
                     X_adv = X + delta
-                    output = model(X_adv)
-                    out_teacher = model_teacher(X)
-                    loss_mse = mse(output, out_teacher) # if LBGAT, +ce(out, y)
+                    if args.features:
+                        output = model_teacher.foward_features(X_adv)
+                        out_natural = model.foward_features(X)
+                        out_teacher = model_teacher.foward_features(X)
+                    else:
+                        output = model(X_adv)
+                        out_natural = model(X)
+                        out_teacher = model_teacher(X)
+                    
+                    loss_mse = mse(output, out_teacher) # if LBGAT, +ce(out_teacher, y)
+                    # loss_mse = mse(output, out_teacher) + args.lbgat_beta * ce(out_teacher, y)
                     loss_ce = ce(output, y)
                     
-                    loss = loss_mse + args.lbgat_beta * loss_ce
+                    loss = args.mse_rate * loss_mse +  loss_ce
                 else:
                     delta = pgd_attack()
                     X_adv = X + delta
