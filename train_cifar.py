@@ -275,19 +275,29 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                     delta = pgd_attack()
                     X_adv = X + delta
                     if args.features:
-                        output = model_teacher.foward_features(X_adv)
-                        out_natural = model.foward_features(X)
-                        out_teacher = model_teacher.foward_features(X)
+                        output = model(X_adv)
+                        output_features = model.module.forward_features(X_adv, return_attention=True)
+                        attn = model.module.attention_maps
+                        out_teacher = model_teacher(X)
+                        out_teacher_features = model_teacher.module.forward_features(X, return_attention=True)
+                        teacher_attn = model_teacher.module.attention_maps
+                        
+                        # loss_mse = mse(output_features, out_teacher_features) # if LBGAT, +ce(out_teacher, y)
+                        # loss_mse = mse(output_features, out_teacher_features) + args.lbgat_beta * ce(out_teacher, y)
+                        loss_mse = mse(attn[-1], teacher_attn[-1])
+                        loss_ce = ce(output, y)
+                        
+                        # loss = args.mse_rate * loss_mse
+                        loss = args.mse_rate * loss_mse +  ce(output, y)
                     else:
                         output = model(X_adv)
-                        out_natural = model(X)
                         out_teacher = model_teacher(X)
-                    
-                    loss_mse = mse(output, out_teacher) # if LBGAT, +ce(out_teacher, y)
-                    # loss_mse = mse(output, out_teacher) + args.lbgat_beta * ce(out_teacher, y)
-                    loss_ce = ce(output, y)
-                    
-                    loss = args.mse_rate * loss_mse +  loss_ce
+                        
+                        loss_mse = mse(output, out_teacher) # if LBGAT, +ce(out_teacher, y)
+                        # loss_mse = mse(output, out_teacher) + args.lbgat_beta * ce(out_teacher, y)
+                        loss_ce = ce(output, y)
+                        
+                        loss = args.mse_rate * loss_mse +  loss_ce
                 else:
                     delta = pgd_attack()
                     X_adv = X + delta
