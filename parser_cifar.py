@@ -55,7 +55,8 @@ def get_args():
     parser.add_argument('--lbgat', action='store_true', help='Use LBGAT loss')
     parser.add_argument('--lbgat-beta', type=float, default=1.0)
     parser.add_argument('--teacher-model-path', type=str, default='')
-    parser.add_argument('--mse-rate', type=float, default=1.0)
+    parser.add_argument('--mse-rate-feat', type=float, default=1000.0)
+    parser.add_argument('--mse-rate-attn', type=float, default=10.0)
     parser.add_argument('--features', action='store_true', help='Use features for the model')
     args = parser.parse_known_args()[0]
     assert args.batch_size % args.accum_steps == 0

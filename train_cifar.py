@@ -282,13 +282,13 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                         out_teacher_features = model_teacher.module.forward_features(X, return_attention=True)
                         teacher_attn = model_teacher.module.attention_maps
                         
-                        # loss_mse = mse(output_features, out_teacher_features) # if LBGAT, +ce(out_teacher, y)
-                        # loss_mse = mse(output_features, out_teacher_features) + args.lbgat_beta * ce(out_teacher, y)
-                        loss_mse = mse(attn[-1], teacher_attn[-1])
+                        loss_mse_feat = mse(output_features, out_teacher_features) # if LBGAT, +ce(out_teacher, y)
+                        # loss_mse_out = mse(output, out_teacher)
+                        loss_mse_attn = mse(attn[-1], teacher_attn[-1])
                         loss_ce = ce(output, y)
-                        
-                        # loss = args.mse_rate * loss_mse
-                        loss = args.mse_rate * loss_mse +  ce(output, y)
+                        loss = loss_ce
+                        loss += args.mse_rate_attn * loss_mse_attn
+                        loss += args.mse_rate_feat * loss_mse_feat
                     else:
                         output = model(X_adv)
                         out_teacher = model_teacher(X)
@@ -405,7 +405,7 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                 acc = (output.max(1)[1] == y.max(1)[1]).float().mean()
             else:
                 acc = (output.max(1)[1] == y).float().mean()
-            return loss, acc,y
+            return loss, acc, y
 
         for step, (X, y) in enumerate(train_loader):
             batch_size = args.batch_size // args.accum_steps
@@ -415,7 +415,7 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                 y_ = y[t * batch_size:(t + 1) * batch_size].cuda()  # .max(dim=-1).indices
                 if len(X_) == 0:
                     break
-                loss, acc,y = train_step(X_,y_,epoch_now,mixup_fn)
+                loss, acc, y = train_step(X_,y_,epoch_now,mixup_fn)
                 train_loss += loss.item() * y_.size(0)
                 train_acc += acc.item() * y_.size(0)
                 train_n += y_.size(0)
