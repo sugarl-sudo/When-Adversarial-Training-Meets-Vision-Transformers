@@ -9,7 +9,7 @@ args = get_args()
 from model_for_cifar.deit import  deit_small_patch16_224
 model = deit_small_patch16_224(pretrained=True, img_size=32, num_classes=10, patch_size=4, args=args).cuda()
 model = nn.DataParallel(model)
-model.load_state_dict(torch.load('./results/deit_small_at/checkpoint_40')['state_dict'])
+model.load_state_dict(torch.load('./results/deit_small_standard/model-deit-epoch40.pt'))
 
 cifar10_mean = (0.4914, 0.4822, 0.4465)
 cifar10_std = (0.2023, 0.1994, 0.2010)
@@ -44,7 +44,7 @@ if attention_maps:
             plt.colorbar()
             plt.title(f"Attention Map from {j} Head")
             plt.show()
-            plt.savefig(f'./atten_vis/robust/attention_map_layer{i}_head{j}.png')
+            plt.savefig(f'./atten_vis/standard/attention_map_layer{i}_head{j}.png')
             plt.close()
         # plt.clear()
 else:
