@@ -36,18 +36,18 @@
 #             --seed 0 &
 
 # vit-small train AT with LBGAT
-out_dir="./results/deit_small_at_attn-10000_features-10"
+out_dir="./results/deit_small_at_cos_attn-6"
 mkdir -p $out_dir
-CUDA_VISIBLE_DEVICES=1 python train_cifar.py --model "deit_small_patch16_224" \
+CUDA_VISIBLE_DEVICES=1s python train_cifar.py --model "deit_small_patch16_224" \
             --method "AT" \
             --out-dir $out_dir \
             --seed 0 \
             --lbgat \
             --lbgat-beta 0.1 \
-            --mse-rate-attn 10000.0 \
+            --mse-rate-attn 10.0 \
             --mse-rate-feat 10.0 \
             --features \
-            --teacher-model-path "./results/deit_small_standard/model-deit-epoch40.pt" & 
+            --teacher-model-path "./results/deit_small_standard/model-deit-epoch40.pt" &
 
 # # vit-small train AT with LBGAT
 # out_dir="./results/deit_small_at_lbgat-features"

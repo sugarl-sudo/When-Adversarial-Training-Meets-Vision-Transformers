@@ -271,7 +271,8 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                 if args.lbgat:
                     mse = torch.nn.MSELoss()
                     ce = SoftTargetCrossEntropy()
-                    model_teacher.train()
+                    # model_teacher.train()
+                    model_teacher.eval()
                     delta = pgd_attack()
                     X_adv = X + delta
                     if args.features:
@@ -284,11 +285,16 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                         
                         loss_mse_feat = mse(output_features, out_teacher_features) # if LBGAT, +ce(out_teacher, y)
                         # loss_mse_out = mse(output, out_teacher)
-                        loss_mse_attn = mse(attn[-1], teacher_attn[-1])
+                        # loss_mse_attn = mse(attn[-1], teacher_attn[-1])
+                        attn_map_flat = attn[5].view(attn[5].shape[0], attn[5].shape[1], -1)
+                        target_attn_map_flat = teacher_attn[5].view(teacher_attn[5].shape[0], teacher_attn[5].shape[1], -1)
+                        loss_cos_attn = 1 - F.cosine_similarity(attn_map_flat, target_attn_map_flat, dim=-1).mean()
                         loss_ce = ce(output, y)
                         loss = loss_ce
-                        loss += args.mse_rate_attn * loss_mse_attn
-                        loss += args.mse_rate_feat * loss_mse_feat
+                        # loss += args.mse_rate_attn * loss_mse_attn 
+                        loss += args.mse_rate_attn * loss_cos_attn
+                        # loss += args.mse_rate_feat * loss_mse_feat
+                        # breakpoint()
                     else:
                         output = model(X_adv)
                         out_teacher = model_teacher(X)
