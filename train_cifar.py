@@ -332,7 +332,7 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                     if args.PRM:
                         delta = delta * add_noise_mask
                     loss_kl = criterion_kl(F.log_softmax(model(X+delta), dim=1),
-                                           F.softmax(model(X), dim=1))
+                                            F.softmax(model(X), dim=1))
                     grad = torch.autograd.grad(loss_kl, [delta])[0]
 
                     delta.data = clamp(delta + alpha * torch.sign(grad), -epsilon, epsilon)
