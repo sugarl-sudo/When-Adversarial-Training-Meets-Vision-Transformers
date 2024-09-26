@@ -19,11 +19,11 @@ parser.add_argument('--test-batch-size', type=int, default=200, metavar='N',
                     help='input batch size for testing (default: 200)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='disables CUDA training')
-parser.add_argument('--epsilon', default=4.,
+parser.add_argument('--epsilon', default=2.,
                     help='perturbation')
 parser.add_argument('--num-steps', default=20,
                     help='perturb number of steps')
-parser.add_argument('--step-size', default=2.,
+parser.add_argument('--step-size', default=0.5,
                     help='perturb step size')
 parser.add_argument('--random',
                     default=True,
@@ -129,9 +129,9 @@ def _pgd_whitebox(model,
     X = X[index[0]]
     # breakpoint()
     # print('err pgd (white-box): ', err_pgd)
-    delta_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_delta_batch{batch_num}.png')
-    X_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_X_batch{batch_num}.png')
-    X_adv_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_X_adv_batch{batch_num}.png')
+    # delta_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_delta_batch{batch_num}.png')
+    # X_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_X_batch{batch_num}.png')
+    # X_adv_path = args.model_path.replace('checkpoint_40', f'pgd-standard/pgd_X_adv_batch{batch_num}.png')
     # _pgd_img_save(delta[:24], delta_path)
     # _pgd_img_save(X[:24], X_path)
     # _pgd_img_save(X_pgd[:24], X_adv_path)
@@ -226,7 +226,7 @@ def main():
         from parser_cifar import get_args
         args_vit = get_args()
         # args_vit.model = 'deit_small_patch16_224'
-        args_vit.model = 'vit_small_patch16_224'
+        # args_vit.model = 'vit_small_patch16_224'
         model = deit_small_patch16_224(pretrained=True, num_classes=10, img_size=32, patch_size=4, args=args_vit).cuda()
         # model = vit_base_patch16_224(pretrained=True, num_classes=10, img_size=32, patch_size=4, args=args_vit).cuda()
         # model = deit_tiny_patch16_224(pretrained=True, num_classes=10, img_size=32, patch_size=4, args=args_vit).cuda()
@@ -234,7 +234,11 @@ def main():
         # breakpoint()
         model = nn.DataParallel(model)
         model.eval()
-        model.load_state_dict(torch.load(args.model_path))
+        print('model-path', args.model_path)
+        # breakpoint()
+        # import pickle
+        # model.load_state_dict(torch.load(args.model_path, encoding='latin1', map_location='cuda:0', pickle_module=pickle))
+        model.load_state_dict(torch.load(args.model_path)['state_dict'])
         print(model)
         print(args_vit)
         

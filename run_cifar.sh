@@ -36,9 +36,9 @@
 #             --seed 0 &
 
 # vit-small train AT with LBGAT
-out_dir="./results/deit_small_at_cos_attn-6"
+out_dir="./results/deit_small_at_feat_cos_attn-12"
 mkdir -p $out_dir
-CUDA_VISIBLE_DEVICES=1s python train_cifar.py --model "deit_small_patch16_224" \
+CUDA_VISIBLE_DEVICES=3 python train_cifar.py --model "deit_small_patch16_224" \
             --method "AT" \
             --out-dir $out_dir \
             --seed 0 \

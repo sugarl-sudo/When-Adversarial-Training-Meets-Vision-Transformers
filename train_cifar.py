@@ -293,7 +293,7 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
                         loss = loss_ce
                         # loss += args.mse_rate_attn * loss_mse_attn 
                         loss += args.mse_rate_attn * loss_cos_attn
-                        # loss += args.mse_rate_feat * loss_mse_feat
+                        loss += args.mse_rate_feat * loss_mse_feat
                         # breakpoint()
                     else:
                         output = model(X_adv)
