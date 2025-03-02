@@ -1,0 +1,22 @@
+[project]
+name = "when-adversarial-training-meets-vision-transformers"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "timm==0.5.4",
+    "numpy>=1.18.5",
+    "torch==1.9.0",
+    "torchvision==0.10.0",
+    "flax==0.2.2",
+    "ml_collections==0.1.0",
+    "tensorflow-datasets==4.0.1",
+    "tensorflow-probability==0.11.1",
+    "oslo_concurrency",
+    "appdirs",
+    "autoattack"
+]
+
+[tool.uv.sources]
+autoattack = {git = "https://github.com/fra31/auto-attack"}
