@@ -142,8 +142,8 @@ def train_adv(args, model, ds_train, ds_test, logger, model_teacher=None):
     mu = torch.tensor(cifar10_mean).view(3, 1, 1).cuda()
     std = torch.tensor(cifar10_std).view(3, 1, 1).cuda()
 
-    upper_limit = ((1 - mu) / std).cuda()
-    lower_limit = ((0 - mu) / std).cuda()
+    upper_limit = ((torch.tensor(1.0).cuda() - mu) / std)
+    lower_limit = ((torch.tensor(0.0).cuda() - mu) / std)
 
     epsilon_base = (args.epsilon / 255.) / std
     alpha = (args.alpha / 255.) / std
